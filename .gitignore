@@ -1,0 +1,8 @@
+# Excluir dataset 
+rideshare_kaggle.csv
+*.csv
+
+# Excluir archivos temporales 
+.ipynb_checkpoints/
+__pycache__/
+.DS_Store
