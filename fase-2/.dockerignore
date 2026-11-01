@@ -1,0 +1,14 @@
+.git/
+.pytest_cache/
+__pycache__/
+.venv/
+venv/
+outputs/
+models/
+data/*
+!data/.gitkeep
+!data/ejemplo_prediccion.csv
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
