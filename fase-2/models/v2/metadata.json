@@ -1,0 +1,27 @@
+{
+    "version": "v2",
+    "fecha_creacion": "2026-11-01T13:42:14.967079-05:00",
+    "tipo_problema": "Regresion",
+    "variable_objetivo": "price",
+    "algoritmo": "HistGradientBoostingRegressor",
+    "semilla": 123,
+    "n_entrenamiento": 510380,
+    "n_prueba": 127596,
+    "python_version": "3.9.6",
+    "version_sklearn": "1.6.1",
+    "columnas_entrada": [
+        "distance",
+        "surge_multiplier",
+        "latitude",
+        "longitude",
+        "temperature",
+        "apparentTemperature",
+        "humidity",
+        "windSpeed",
+        "windGust",
+        "visibility",
+        "pressure",
+        "name",
+        "cab_type"
+    ]
+}
