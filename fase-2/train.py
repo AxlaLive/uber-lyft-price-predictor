@@ -78,17 +78,22 @@ def _git(*argumentos: str) -> str:
     return resultado.stdout.strip()
 
 
-def referencia_codigo() -> dict:
+def referencia_codigo(output_dir: Path) -> dict:
     """Identifica la versión del código que generó los artefactos.
 
     'commit' es el HEAD en el momento de ejecutar el entrenamiento. Como los
     artefactos se confirman después, ese hash corresponde al código que los
     produjo y no al commit que los contiene. 'estado_arbol' advierte si había
     cambios sin confirmar, caso en el que el hash no describe el código exacto.
+    El propio directorio de salida se excluye de esa comprobación, porque los
+    archivos que se están escribiendo aparecerían siempre como pendientes.
     """
     commit = _git("rev-parse", "HEAD") or "desconocido"
     rama = _git("rev-parse", "--abbrev-ref", "HEAD") or "desconocida"
-    estado = "con cambios sin confirmar" if _git("status", "--porcelain") else "limpio"
+    pendientes = _git(
+        "status", "--porcelain", "--", ".", f":(exclude){output_dir}"
+    )
+    estado = "con cambios sin confirmar" if pendientes else "limpio"
     return {
         "commit": commit,
         "rama": rama,
@@ -294,7 +299,7 @@ def main() -> None:
             "modelo_base": "DummyRegressor(strategy='median')",
         },
         "dependencias": "requirements.txt",
-        "codigo": referencia_codigo(),
+        "codigo": referencia_codigo(args.output_dir),
     }
 
     joblib.dump(artifact, version_dir / "modelo.joblib")

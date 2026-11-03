@@ -121,11 +121,17 @@ entrenamiento.
 
 | Versión | Modelo R² | Modelo MAE | Base R² | Base MAE |
 |---|---|---|---|---|
-| v1 (semilla 42) | 0,9648 | $1,16 | −0,1062 | $7,37 |
-| v2 (semilla 123) | 0,9648 | $1,16 | −0,1074 | $7,37 |
+| v1 (semilla 42) | 0,9617 | $1,25 | −0,0920 | $7,59 |
+| v2 (semilla 123) | 0,9622 | $1,25 | −0,0919 | $7,57 |
 
 La métrica principal es R². El modelo base obtiene R² negativo, es decir, es peor
-que predecir la media, mientras que el modelo reduce el MAE de $7,37 a $1,16.
+que predecir la media, mientras que el modelo reduce el MAE de $7,59 a $1,25.
+
+Estas cifras son algo menores que las de la primera versión de estos scripts
+(R² 0,9648 y MAE $1,16), que entrenaba sobre 637.976 filas sin deduplicar. Aquel
+número estaba inflado: filas idénticas aparecían en entrenamiento y en prueba, así
+que parte de la evaluación se hacía con observaciones ya vistas. El valor actual es
+el honesto.
 
 `metadata.json` registra, por versión: identificador y fecha, tipo de problema,
 variable objetivo, algoritmo, semilla, nombres y tipos de las variables de
