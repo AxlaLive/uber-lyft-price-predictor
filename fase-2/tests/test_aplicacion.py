@@ -135,10 +135,22 @@ def test_entrenamiento_y_almacenamiento(
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     assert artifact["columnas_entrada"] == INPUT_COLUMNS
-    assert set(metrics) == {"rmse", "mae", "r2"}
-    assert all(isinstance(value, float) for value in metrics.values())
+    assert set(metrics) == {"metrica_principal", "modelo", "modelo_base"}
+    assert set(metrics["modelo"]) == {"rmse", "mae", "r2"}
+    assert all(isinstance(value, float) for value in metrics["modelo"].values())
+    # El modelo base se evalúa sobre la misma partición, para conservar la
+    # comparación de la Fase 1.
+    assert metrics["modelo_base"]["estrategia"] == "median"
+    assert set(metrics["modelo_base"]) == {"estrategia", "rmse", "mae", "r2"}
     assert metadata["version"] == "v1"
     assert metadata["n_entrenamiento"] + metadata["n_prueba"] == 30
+    # Metadatos mínimos del punto 10.1 de la especificación.
+    assert set(metadata["tipos_entrada"]) == set(INPUT_COLUMNS)
+    assert metadata["parametros_modelo"]["random_state"] == 42
+    assert metadata["datos"]["n_observaciones_utilizadas"] == 30
+    assert metadata["separacion"]["metrica_evaluacion"] == metrics["metrica_principal"]
+    assert metadata["dependencias"] == "requirements.txt"
+    assert metadata["commit"]
 
 
 def test_carga_y_prediccion_conserva_filas(

@@ -1,6 +1,6 @@
 {
     "version": "v2",
-    "fecha_creacion": "2026-11-01T13:42:14.967079-05:00",
+    "fecha_creacion": "2026-11-03T11:42:51.454841-05:00",
     "tipo_problema": "Regresion",
     "variable_objetivo": "price",
     "algoritmo": "HistGradientBoostingRegressor",
@@ -23,5 +23,61 @@
         "pressure",
         "name",
         "cab_type"
-    ]
+    ],
+    "tipos_entrada": {
+        "distance": "numerico",
+        "surge_multiplier": "numerico",
+        "latitude": "numerico",
+        "longitude": "numerico",
+        "temperature": "numerico",
+        "apparentTemperature": "numerico",
+        "humidity": "numerico",
+        "windSpeed": "numerico",
+        "windGust": "numerico",
+        "visibility": "numerico",
+        "pressure": "numerico",
+        "name": "categorico",
+        "cab_type": "categorico"
+    },
+    "parametros_modelo": {
+        "categorical_features": "from_dtype",
+        "early_stopping": "auto",
+        "interaction_cst": null,
+        "l2_regularization": 0.0,
+        "learning_rate": 0.1,
+        "loss": "squared_error",
+        "max_bins": 255,
+        "max_depth": null,
+        "max_features": 1.0,
+        "max_iter": 100,
+        "max_leaf_nodes": 31,
+        "min_samples_leaf": 20,
+        "monotonic_cst": null,
+        "n_iter_no_change": 10,
+        "quantile": null,
+        "random_state": 123,
+        "scoring": "loss",
+        "tol": 1e-07,
+        "validation_fraction": 0.1,
+        "verbose": 0,
+        "warm_start": false
+    },
+    "preprocesamiento": {
+        "numericas": "SimpleImputer(strategy='median')",
+        "categoricas": "OneHotEncoder(handle_unknown='ignore')",
+        "ajustado_con": "solo X_train"
+    },
+    "datos": {
+        "fuente": "Kaggle: Uber & Lyft Cab prices, Boston MA (https://www.kaggle.com/datasets/brllrb/uber-and-lyft-dataset-boston-ma)",
+        "archivo": "rideshare_kaggle.csv",
+        "n_observaciones_utilizadas": 637976
+    },
+    "separacion": {
+        "metodo": "train_test_split aleatorio",
+        "test_size": 0.2,
+        "metrica_evaluacion": "r2",
+        "modelo_base": "DummyRegressor(strategy='median')"
+    },
+    "dependencias": "requirements.txt",
+    "commit": "60698cf83a46d66c1e1bd45c12bc2d8ef941111a"
 }
