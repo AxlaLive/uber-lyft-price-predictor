@@ -63,19 +63,42 @@ def tipos_esperados() -> dict:
     return tipos
 
 
-def commit_actual() -> str:
-    """Hash del commit que generó la versión; 'desconocido' fuera de un repo Git."""
+def _git(*argumentos: str) -> str:
+    """Ejecuta un comando de Git en la carpeta del script; cadena vacía si falla."""
     try:
         resultado = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
+            ["git", *argumentos],
             cwd=Path(__file__).resolve().parent,
             capture_output=True,
             text=True,
             check=True,
         )
     except (OSError, subprocess.CalledProcessError):
-        return "desconocido"
-    return resultado.stdout.strip() or "desconocido"
+        return ""
+    return resultado.stdout.strip()
+
+
+def referencia_codigo() -> dict:
+    """Identifica la versión del código que generó los artefactos.
+
+    'commit' es el HEAD en el momento de ejecutar el entrenamiento. Como los
+    artefactos se confirman después, ese hash corresponde al código que los
+    produjo y no al commit que los contiene. 'estado_arbol' advierte si había
+    cambios sin confirmar, caso en el que el hash no describe el código exacto.
+    """
+    commit = _git("rev-parse", "HEAD") or "desconocido"
+    rama = _git("rev-parse", "--abbrev-ref", "HEAD") or "desconocida"
+    estado = "con cambios sin confirmar" if _git("status", "--porcelain") else "limpio"
+    return {
+        "commit": commit,
+        "rama": rama,
+        "estado_arbol": estado,
+        "nota": (
+            "HEAD en el momento de entrenar. Los artefactos se confirman en un "
+            "commit posterior, así que este hash identifica el código que los "
+            "generó, no el commit que los almacena."
+        ),
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -133,10 +156,6 @@ def main() -> None:
             f"La variable objetivo '{args.target}' no se encuentra en el dataset."
         )
 
-    df = df.dropna(subset=[args.target]).drop_duplicates()
-    if df.empty:
-        raise ValueError("No hay filas disponibles después de limpiar el dataset.")
-
     required_columns = COLS_NUM + COLS_CAT + [args.target]
     missing_columns = [column for column in required_columns if column not in df.columns]
     if missing_columns:
@@ -144,6 +163,25 @@ def main() -> None:
             f"Faltan las siguientes columnas requeridas en el dataset: "
             f"{missing_columns}"
         )
+
+    n_original = len(df)
+    df = df.dropna(subset=[args.target])
+    n_con_objetivo = len(df)
+
+    # La deduplicación se hace sobre las columnas que el modelo realmente usa más
+    # la variable objetivo. Aplicarla sobre todas las columnas del CSV no elimina
+    # ninguna fila, porque 'id', 'timestamp' y 'datetime' vuelven única cada una:
+    # el resultado era que observaciones idénticas para el modelo cayeran a ambos
+    # lados de la partición y la evaluación usara filas ya vistas al entrenar.
+    df = df.drop_duplicates(subset=required_columns)
+    n_duplicadas = n_con_objetivo - len(df)
+    if df.empty:
+        raise ValueError("No hay filas disponibles después de limpiar el dataset.")
+
+    print(
+        f"[*] Filas: {n_original} originales -> {n_con_objetivo} con '{args.target}' "
+        f"-> {len(df)} tras descartar {n_duplicadas} duplicadas"
+    )
 
     X = df[COLS_NUM + COLS_CAT].copy()
     y = df[args.target].copy()
@@ -243,6 +281,10 @@ def main() -> None:
         "datos": {
             "fuente": FUENTE_DATOS,
             "archivo": args.data.name,
+            "n_observaciones_originales": int(n_original),
+            "filas_sin_objetivo_descartadas": int(n_original - n_con_objetivo),
+            "filas_duplicadas_descartadas": int(n_duplicadas),
+            "deduplicado_por": required_columns,
             "n_observaciones_utilizadas": int(len(df)),
         },
         "separacion": {
@@ -252,7 +294,7 @@ def main() -> None:
             "modelo_base": "DummyRegressor(strategy='median')",
         },
         "dependencias": "requirements.txt",
-        "commit": commit_actual(),
+        "codigo": referencia_codigo(),
     }
 
     joblib.dump(artifact, version_dir / "modelo.joblib")

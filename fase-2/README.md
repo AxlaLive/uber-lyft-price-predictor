@@ -75,8 +75,26 @@ Pesa unos 350 MB descomprimido, así que no se almacena en Git. Para obtenerlo:
    `fase-2/data/rideshare_kaggle.csv` si vas a entrenar dentro de Docker.
 
 Los comandos de esta guía asumen la primera ubicación, `../rideshare_kaggle.csv`.
-El archivo trae 693.071 filas y 57 columnas; el entrenamiento usa 13 de ellas y
-descarta las 55.095 filas sin `price`, que corresponden a la categoría Taxi.
+
+El archivo trae 693.071 filas y 57 columnas, de las que el modelo usa 13. Antes de
+entrenar, `train.py` descarta en este orden:
+
+| Paso | Filas restantes |
+|---|---|
+| Archivo original | 693.071 |
+| Sin las 55.095 filas sin `price` (categoría Taxi) | 637.976 |
+| Sin las 88.663 filas duplicadas en las 13 variables más `price` | **549.313** |
+
+La deduplicación mira **solo las columnas que el modelo usa**, no las 57 del CSV.
+Si se hiciera sobre todas, no eliminaría ninguna fila, porque `id`, `timestamp` y
+`datetime` vuelven única cada una; entonces observaciones idénticas para el modelo
+caerían a ambos lados de la partición y la evaluación usaría filas ya vistas al
+entrenar. Cada `metadata.json` registra estas cuatro cifras.
+
+El notebook de la Fase 1 reporta 582.066 observaciones porque deduplica sobre un
+conjunto más amplio de columnas auditadas, que incluye la hora, el día y el mes.
+Es un criterio más laxo: aquí se usa el más estricto, el de las entradas reales
+del modelo.
 
 ## Entrenamiento
 
@@ -111,9 +129,21 @@ que predecir la media, mientras que el modelo reduce el MAE de $7,37 a $1,16.
 
 `metadata.json` registra, por versión: identificador y fecha, tipo de problema,
 variable objetivo, algoritmo, semilla, nombres y tipos de las variables de
-entrada, parámetros del regresor, preprocesamiento, fuente y tamaño de los datos,
+entrada, parámetros del regresor, preprocesamiento, fuente y cifras de los datos
+(originales, descartadas por falta de objetivo, duplicadas y utilizadas),
 estrategia de separación, métrica de evaluación, versión de Python y de
-scikit-learn, referencia a `requirements.txt` y el hash del commit que la generó.
+scikit-learn, y referencia a `requirements.txt`.
+
+### Qué significa el campo `codigo`
+
+`metadata.json` incluye un bloque `codigo` con el `commit`, la `rama` y el
+`estado_arbol`. El hash es el **HEAD en el momento de entrenar**, es decir, el
+código que generó los artefactos. Como los artefactos se confirman después, ese
+hash nunca es el del commit que los contiene, sino el de su antecesor: para
+reproducir una versión hay que situarse en ese commit. `estado_arbol` avisa si
+había cambios sin confirmar al entrenar; en ese caso el hash no describe con
+exactitud el código utilizado, y conviene regenerar la versión con el árbol
+limpio.
 
 ## Limitaciones conocidas
 
