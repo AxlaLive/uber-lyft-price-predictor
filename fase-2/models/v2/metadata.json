@@ -1,12 +1,12 @@
 {
     "version": "v2",
-    "fecha_creacion": "2026-11-03T11:42:51.454841-05:00",
+    "fecha_creacion": "2026-11-03T15:07:32.502814-05:00",
     "tipo_problema": "Regresion",
     "variable_objetivo": "price",
     "algoritmo": "HistGradientBoostingRegressor",
     "semilla": 123,
-    "n_entrenamiento": 510380,
-    "n_prueba": 127596,
+    "n_entrenamiento": 439450,
+    "n_prueba": 109863,
     "python_version": "3.9.6",
     "version_sklearn": "1.6.1",
     "columnas_entrada": [
@@ -70,7 +70,26 @@
     "datos": {
         "fuente": "Kaggle: Uber & Lyft Cab prices, Boston MA (https://www.kaggle.com/datasets/brllrb/uber-and-lyft-dataset-boston-ma)",
         "archivo": "rideshare_kaggle.csv",
-        "n_observaciones_utilizadas": 637976
+        "n_observaciones_originales": 693071,
+        "filas_sin_objetivo_descartadas": 55095,
+        "filas_duplicadas_descartadas": 88663,
+        "deduplicado_por": [
+            "distance",
+            "surge_multiplier",
+            "latitude",
+            "longitude",
+            "temperature",
+            "apparentTemperature",
+            "humidity",
+            "windSpeed",
+            "windGust",
+            "visibility",
+            "pressure",
+            "name",
+            "cab_type",
+            "price"
+        ],
+        "n_observaciones_utilizadas": 549313
     },
     "separacion": {
         "metodo": "train_test_split aleatorio",
@@ -79,5 +98,10 @@
         "modelo_base": "DummyRegressor(strategy='median')"
     },
     "dependencias": "requirements.txt",
-    "commit": "60698cf83a46d66c1e1bd45c12bc2d8ef941111a"
+    "codigo": {
+        "commit": "dd0724c43f18b1b6b1119cbaa5d10152d372b88f",
+        "rama": "feature/correcciones-fuga-metadatos",
+        "estado_arbol": "limpio",
+        "nota": "HEAD en el momento de entrenar. Los artefactos se confirman en un commit posterior, así que este hash identifica el código que los generó, no el commit que los almacena."
+    }
 }
