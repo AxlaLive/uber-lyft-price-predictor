@@ -14,6 +14,8 @@ Importante: el dataset recoge **cotizaciones mostradas por la aplicación**, no 
 
 La fuente es el dataset de Kaggle **Uber & Lyft Cab prices (Boston, MA)**: <https://www.kaggle.com/datasets/brllrb/uber-and-lyft-dataset-boston-ma>. Trae 693.071 registros y 57 columnas. Tras descartar las 55.095 filas sin `price`, que corresponden a la categoría Taxi, y eliminar duplicados exactos, quedan **582.066 observaciones**.
 
+> **Sobre el conteo de observaciones.** Este notebook deduplica sobre el conjunto de columnas que quedan después de la auditoría de variables, que incluye la hora, el día y el mes, y por eso llega a 582.066 filas. El `train.py` de la Fase 2 deduplica solo sobre las 13 variables que el modelo usa más `price`, un criterio más estricto, y llega a 549.313. Las dos cifras son correctas para su criterio; la diferencia son filas que coinciden en las entradas del modelo pero se registraron en horas distintas.
+
 ## Contenido
 
 - `fase_1_modelo.ipynb`: exploración, preparación de datos, entrenamiento y evaluación del modelo.
