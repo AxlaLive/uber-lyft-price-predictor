@@ -8,7 +8,11 @@ Esta carpeta contiene la primera fase del proyecto de predicción del precio de 
 - `../modelos/modelo_hgb_v1.joblib`: pipeline entrenado y metadatos para realizar predicciones.
 - `requirements.txt`: dependencias del proyecto. La versión de scikit-learn está fijada para mantener la compatibilidad con el modelo guardado.
 
-El dataset utilizado es `../rideshare_kaggle.csv`.
+El dataset utilizado es `../rideshare_kaggle.csv`, que no se almacena en Git por su
+tamaño (unos 350 MB). Se descarga de Kaggle, **Uber & Lyft Cab prices (Boston,
+MA)**: <https://www.kaggle.com/datasets/brllrb/uber-and-lyft-dataset-boston-ma>.
+Descomprime `uber-and-lyft-dataset-boston-ma.zip` y deja `rideshare_kaggle.csv` en
+la raíz del repositorio, al lado de las carpetas `fase-1` y `fase-2`.
 
 ## Qué incluye el notebook
 

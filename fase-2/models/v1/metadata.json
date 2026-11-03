@@ -1,12 +1,12 @@
 {
     "version": "v1",
-    "fecha_creacion": "2026-11-01T13:41:35.686945-05:00",
+    "fecha_creacion": "2026-11-03T15:07:22.861717-05:00",
     "tipo_problema": "Regresion",
     "variable_objetivo": "price",
     "algoritmo": "HistGradientBoostingRegressor",
     "semilla": 42,
-    "n_entrenamiento": 510380,
-    "n_prueba": 127596,
+    "n_entrenamiento": 439450,
+    "n_prueba": 109863,
     "python_version": "3.9.6",
     "version_sklearn": "1.6.1",
     "columnas_entrada": [
@@ -23,5 +23,85 @@
         "pressure",
         "name",
         "cab_type"
-    ]
+    ],
+    "tipos_entrada": {
+        "distance": "numerico",
+        "surge_multiplier": "numerico",
+        "latitude": "numerico",
+        "longitude": "numerico",
+        "temperature": "numerico",
+        "apparentTemperature": "numerico",
+        "humidity": "numerico",
+        "windSpeed": "numerico",
+        "windGust": "numerico",
+        "visibility": "numerico",
+        "pressure": "numerico",
+        "name": "categorico",
+        "cab_type": "categorico"
+    },
+    "parametros_modelo": {
+        "categorical_features": "from_dtype",
+        "early_stopping": "auto",
+        "interaction_cst": null,
+        "l2_regularization": 0.0,
+        "learning_rate": 0.1,
+        "loss": "squared_error",
+        "max_bins": 255,
+        "max_depth": null,
+        "max_features": 1.0,
+        "max_iter": 100,
+        "max_leaf_nodes": 31,
+        "min_samples_leaf": 20,
+        "monotonic_cst": null,
+        "n_iter_no_change": 10,
+        "quantile": null,
+        "random_state": 42,
+        "scoring": "loss",
+        "tol": 1e-07,
+        "validation_fraction": 0.1,
+        "verbose": 0,
+        "warm_start": false
+    },
+    "preprocesamiento": {
+        "numericas": "SimpleImputer(strategy='median')",
+        "categoricas": "OneHotEncoder(handle_unknown='ignore')",
+        "ajustado_con": "solo X_train"
+    },
+    "datos": {
+        "fuente": "Kaggle: Uber & Lyft Cab prices, Boston MA (https://www.kaggle.com/datasets/brllrb/uber-and-lyft-dataset-boston-ma)",
+        "archivo": "rideshare_kaggle.csv",
+        "n_observaciones_originales": 693071,
+        "filas_sin_objetivo_descartadas": 55095,
+        "filas_duplicadas_descartadas": 88663,
+        "deduplicado_por": [
+            "distance",
+            "surge_multiplier",
+            "latitude",
+            "longitude",
+            "temperature",
+            "apparentTemperature",
+            "humidity",
+            "windSpeed",
+            "windGust",
+            "visibility",
+            "pressure",
+            "name",
+            "cab_type",
+            "price"
+        ],
+        "n_observaciones_utilizadas": 549313
+    },
+    "separacion": {
+        "metodo": "train_test_split aleatorio",
+        "test_size": 0.2,
+        "metrica_evaluacion": "r2",
+        "modelo_base": "DummyRegressor(strategy='median')"
+    },
+    "dependencias": "requirements.txt",
+    "codigo": {
+        "commit": "dd0724c43f18b1b6b1119cbaa5d10152d372b88f",
+        "rama": "feature/correcciones-fuga-metadatos",
+        "estado_arbol": "limpio",
+        "nota": "HEAD en el momento de entrenar. Los artefactos se confirman en un commit posterior, así que este hash identifica el código que los generó, no el commit que los almacena."
+    }
 }

@@ -135,10 +135,32 @@ def test_entrenamiento_y_almacenamiento(
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     assert artifact["columnas_entrada"] == INPUT_COLUMNS
-    assert set(metrics) == {"rmse", "mae", "r2"}
-    assert all(isinstance(value, float) for value in metrics.values())
+    assert set(metrics) == {"metrica_principal", "modelo", "modelo_base"}
+    assert set(metrics["modelo"]) == {"rmse", "mae", "r2"}
+    assert all(isinstance(value, float) for value in metrics["modelo"].values())
+    # El modelo base se evalúa sobre la misma partición, para conservar la
+    # comparación de la Fase 1.
+    assert metrics["modelo_base"]["estrategia"] == "median"
+    assert set(metrics["modelo_base"]) == {"estrategia", "rmse", "mae", "r2"}
     assert metadata["version"] == "v1"
     assert metadata["n_entrenamiento"] + metadata["n_prueba"] == 30
+    # Metadatos mínimos del punto 10.1 de la especificación.
+    assert set(metadata["tipos_entrada"]) == set(INPUT_COLUMNS)
+    assert metadata["parametros_modelo"]["random_state"] == 42
+    # Las cifras de datos deben describir las filas realmente usadas para entrenar.
+    assert metadata["datos"]["n_observaciones_originales"] == 30
+    assert metadata["datos"]["filas_sin_objetivo_descartadas"] == 0
+    assert metadata["datos"]["filas_duplicadas_descartadas"] == 0
+    assert metadata["datos"]["deduplicado_por"] == INPUT_COLUMNS + ["price"]
+    assert metadata["datos"]["n_observaciones_utilizadas"] == 30
+    assert (
+        metadata["datos"]["n_observaciones_utilizadas"]
+        == metadata["n_entrenamiento"] + metadata["n_prueba"]
+    )
+    assert metadata["separacion"]["metrica_evaluacion"] == metrics["metrica_principal"]
+    assert metadata["dependencias"] == "requirements.txt"
+    assert metadata["codigo"]["commit"]
+    assert metadata["codigo"]["estado_arbol"] in {"limpio", "con cambios sin confirmar"}
 
 
 def test_carga_y_prediccion_conserva_filas(
@@ -228,3 +250,31 @@ def test_versionamiento_conserva_versiones_y_rechaza_sobrescritura(
         v1_hash_before
     )
     assert v1_files == {path.name for path in v1_dir.iterdir()}
+
+
+def test_duplicados_se_descartan_antes_de_la_particion(
+    datos_sinteticos: Path, tmp_path: Path
+) -> None:
+    """Filas idénticas en las columnas del modelo no deben repartirse entre
+    entrenamiento y prueba: el entrenamiento las descarta antes de dividir.
+
+    La deduplicación debe mirar solo las columnas que el modelo usa. Aquí las
+    copias traen un 'id' distinto, como en el dataset real, donde esa columna
+    hacía que ninguna fila se considerara duplicada.
+    """
+    df = pd.read_csv(datos_sinteticos)
+    df["id"] = [f"orig-{i}" for i in range(len(df))]
+    copias = df.iloc[:10].copy()
+    copias["id"] = [f"copia-{i}" for i in range(10)]
+    data_path = tmp_path / "datos_con_duplicados.csv"
+    pd.concat([df, copias], ignore_index=True).to_csv(data_path, index=False)
+
+    output_dir = tmp_path / "models"
+    result = train_model(data_path, output_dir)
+    assert result.returncode == 0, result.stderr
+
+    metadata = json.loads((output_dir / "v1" / "metadata.json").read_text())
+    assert metadata["datos"]["n_observaciones_originales"] == 40
+    assert metadata["datos"]["filas_duplicadas_descartadas"] == 10
+    assert metadata["datos"]["n_observaciones_utilizadas"] == 30
+    assert metadata["n_entrenamiento"] + metadata["n_prueba"] == 30
