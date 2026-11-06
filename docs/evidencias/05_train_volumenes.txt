@@ -1,0 +1,8 @@
+$ docker run --rm -v /tmp/opencode/evidencia-demo/data:/app/data -v /tmp/opencode/evidencia-demo/models:/app/models ... train.py --version v3-demo
+[*] Cargando datos desde: data/rideshare_demo.csv
+[*] Filas: 1200 originales -> 1200 con 'price' -> 1200 tras descartar 0 duplicadas
+[*] Entrenando HistGradientBoosting...
+[*] Entrenando el modelo base (mediana)...
+[+] Modelo     -> R²: 0.9955 | MAE: $0.83 | RMSE: $1.10
+[+] Modelo base -> R²: -0.0307 | MAE: $13.09 | RMSE: $16.56
+[+] Artefactos guardados en: models/v3-demo/
