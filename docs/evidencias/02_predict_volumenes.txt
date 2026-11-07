@@ -1,0 +1,4 @@
+[*] Cargando artefacto del modelo desde: models/v1/modelo.joblib
+[*] Leyendo datos de entrada desde: data/ejemplo_prediccion.csv
+[*] Generando predicciones...
+[+] Predicciones guardadas exitosamente en: outputs/predicciones_docker.csv

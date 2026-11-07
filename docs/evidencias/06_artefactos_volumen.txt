@@ -1,0 +1,22 @@
+$ ls -lh models/v3-demo/
+total 388K
+-rw-r--r-- 1 root root 3.3K Nov  6 10:17 metadata.json
+-rw-r--r-- 1 root root  326 Nov  6 10:17 metrics.json
+-rw-r--r-- 1 root root 379K Nov  6 10:17 modelo.joblib
+
+$ head -c 600 models/v3-demo/metrics.json
+
+{
+    "metrica_principal": "r2",
+    "modelo": {
+        "rmse": 1.098825360765678,
+        "mae": 0.8331415909210461,
+        "r2": 0.9954596600411791
+    },
+    "modelo_base": {
+        "estrategia": "median",
+        "rmse": 16.55608450590497,
+        "mae": 13.088916666666666,
+        "r2": -0.030733264790903103
+    }
+}
