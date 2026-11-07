@@ -1,0 +1,4 @@
+distance,surge_multiplier,latitude,longitude,temperature,apparentTemperature,humidity,windSpeed,windGust,visibility,pressure,name,cab_type
+0.91,1.0,42.3398,-71.0892,52.9,52.9,0.5,7.4,7.78,10.0,999.89,Black SUV,Uber
+5.33,1.0,42.3519,-71.0643,29.05,24.17,0.57,4.46,5.75,10.0,1020.93,Shared,Lyft
+1.08,1.25,42.3519,-71.0551,52.45,52.45,0.87,4.95,4.95,10.0,999.97,Lux Black XL,Lyft
