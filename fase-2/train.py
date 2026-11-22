@@ -141,27 +141,35 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
-    args = parse_args()
+def train_model(
+    data_path: Path,
+    target: str = "price",
+    output_dir: Path = Path("models"),
+    version: str = "v1",
+    seed: int = 42,
+) -> dict:
+    """Entrena el pipeline y guarda el modelo, sus métricas y sus metadatos."""
+    data_path = Path(data_path)
+    output_dir = Path(output_dir)
 
-    if not VERSION_PATTERN.fullmatch(args.version) or args.version in {".", ".."}:
+    if not VERSION_PATTERN.fullmatch(version) or version in {".", ".."}:
         raise ValueError(
             "La versión solo puede contener letras, números, puntos, guiones "
             "y guiones bajos, y debe comenzar con letra o número."
         )
 
-    if not args.data.is_file():
-        raise FileNotFoundError(f"No se encontró el archivo de datos: {args.data}")
+    if not data_path.is_file():
+        raise FileNotFoundError(f"No se encontró el archivo de datos: {data_path}")
 
-    print(f"[*] Cargando datos desde: {args.data}")
-    df = pd.read_csv(args.data)
+    print(f"[*] Cargando datos desde: {data_path}")
+    df = pd.read_csv(data_path)
 
-    if args.target not in df.columns:
+    if target not in df.columns:
         raise ValueError(
-            f"La variable objetivo '{args.target}' no se encuentra en el dataset."
+            f"La variable objetivo '{target}' no se encuentra en el dataset."
         )
 
-    required_columns = COLS_NUM + COLS_CAT + [args.target]
+    required_columns = COLS_NUM + COLS_CAT + [target]
     missing_columns = [column for column in required_columns if column not in df.columns]
     if missing_columns:
         raise ValueError(
@@ -170,7 +178,7 @@ def main() -> None:
         )
 
     n_original = len(df)
-    df = df.dropna(subset=[args.target])
+    df = df.dropna(subset=[target])
     n_con_objetivo = len(df)
 
     # La deduplicación se hace sobre las columnas que el modelo realmente usa más
@@ -184,15 +192,15 @@ def main() -> None:
         raise ValueError("No hay filas disponibles después de limpiar el dataset.")
 
     print(
-        f"[*] Filas: {n_original} originales -> {n_con_objetivo} con '{args.target}' "
+        f"[*] Filas: {n_original} originales -> {n_con_objetivo} con '{target}' "
         f"-> {len(df)} tras descartar {n_duplicadas} duplicadas"
     )
 
     X = df[COLS_NUM + COLS_CAT].copy()
-    y = df[args.target].copy()
+    y = df[target].copy()
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=args.seed
+        X, y, test_size=0.2, random_state=seed
     )
 
     preprocessor = ColumnTransformer(
@@ -211,7 +219,7 @@ def main() -> None:
             ("preprocesamiento", preprocessor),
             (
                 "regresor",
-                HistGradientBoostingRegressor(random_state=args.seed),
+                HistGradientBoostingRegressor(random_state=seed),
             ),
         ]
     )
@@ -247,13 +255,13 @@ def main() -> None:
         f"RMSE: ${metricas_base['rmse']:.2f}"
     )
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    version_dir = args.output_dir / args.version
+    output_dir.mkdir(parents=True, exist_ok=True)
+    version_dir = output_dir / version
     try:
         version_dir.mkdir()
     except FileExistsError as exc:
         raise FileExistsError(
-            f"La versión '{args.version}' ya existe en '{version_dir}'. "
+            f"La versión '{version}' ya existe en '{version_dir}'. "
             "No se sobrescribirá."
         ) from exc
 
@@ -265,12 +273,12 @@ def main() -> None:
         "version_sklearn": sklearn.__version__,
     }
     metadata = {
-        "version": args.version,
+        "version": version,
         "fecha_creacion": datetime.now().astimezone().isoformat(),
         "tipo_problema": "Regresion",
-        "variable_objetivo": args.target,
+        "variable_objetivo": target,
         "algoritmo": "HistGradientBoostingRegressor",
-        "semilla": args.seed,
+        "semilla": seed,
         "n_entrenamiento": len(X_train),
         "n_prueba": len(X_test),
         "python_version": platform.python_version(),
@@ -285,7 +293,7 @@ def main() -> None:
         },
         "datos": {
             "fuente": FUENTE_DATOS,
-            "archivo": args.data.name,
+            "archivo": data_path.name,
             "n_observaciones_originales": int(n_original),
             "filas_sin_objetivo_descartadas": int(n_original - n_con_objetivo),
             "filas_duplicadas_descartadas": int(n_duplicadas),
@@ -299,7 +307,7 @@ def main() -> None:
             "modelo_base": "DummyRegressor(strategy='median')",
         },
         "dependencias": "requirements.txt",
-        "codigo": referencia_codigo(args.output_dir),
+        "codigo": referencia_codigo(output_dir),
     }
 
     joblib.dump(artifact, version_dir / "modelo.joblib")
@@ -312,6 +320,25 @@ def main() -> None:
         encoding="utf-8",
     )
     print(f"[+] Artefactos guardados en: {version_dir}/")
+    return {
+        "version": version,
+        "model_path": version_dir / "modelo.joblib",
+        "metrics_path": version_dir / "metrics.json",
+        "metadata_path": version_dir / "metadata.json",
+        "metrics": metrics,
+        "metadata": metadata,
+    }
+
+
+def main() -> None:
+    args = parse_args()
+    train_model(
+        data_path=args.data,
+        target=args.target,
+        output_dir=args.output_dir,
+        version=args.version,
+        seed=args.seed,
+    )
 
 
 if __name__ == "__main__":
