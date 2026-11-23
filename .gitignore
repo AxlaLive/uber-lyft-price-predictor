@@ -4,6 +4,7 @@ rideshare_kaggle.csv
 
 # Excepción: el CSV de ejemplo para predecir sí debe estar en el repositorio
 !fase-2/data/ejemplo_prediccion.csv
+!fase-4/logs/muestra_ensayo.csv
 
 # Excluir archivos temporales 
 .ipynb_checkpoints/
