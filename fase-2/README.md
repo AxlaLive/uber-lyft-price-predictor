@@ -209,6 +209,19 @@ Desde esta carpeta, ejecuta:
 python3 -m pytest
 ```
 
+Son siete pruebas, con datos sintéticos pequeños y directorios temporales, de
+modo que no tocan los modelos de la entrega:
+
+| Prueba | Qué comprueba |
+|---|---|
+| Entrenamiento y almacenamiento | El CLI deja un artefacto cargable, métricas y metadatos con los campos mínimos |
+| Carga y predicción | El artefacto predice una vez por fila y conserva el orden y las columnas de entrada |
+| Predicciones antes y después de serializar | El pipeline recargado del disco, y el CSV que genera `predict.py`, devuelven los mismos valores que el pipeline en memoria, con tolerancia numérica |
+| Valores faltantes | Un nulo en una variable numérica se imputa con la mediana aprendida, sin descartar la fila |
+| Entrada inválida | La ausencia de una columna requerida termina con código distinto de cero y no deja un CSV de salida |
+| Versionamiento | Una segunda versión conserva la primera, y repetir un identificador no sobrescribe sus archivos |
+| Duplicados | Las filas idénticas en las variables del modelo se descartan antes de particionar |
+
 ## Contenedor Docker
 
 Construye la imagen desde `fase-2/`:

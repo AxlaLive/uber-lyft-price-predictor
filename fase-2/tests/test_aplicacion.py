@@ -4,12 +4,14 @@ Proyecto Integrador - Modelos y Simulación de Sistemas I
 """
 
 import hashlib
+import importlib.util
 import json
 import subprocess
 import sys
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -185,6 +187,54 @@ def test_carga_y_prediccion_conserva_filas(
         input_df.reset_index(drop=True),
         check_dtype=False,
     )
+
+
+def cargar_modulo_train():
+    """Importa train.py como módulo para entrenar dentro del proceso de prueba."""
+    spec = importlib.util.spec_from_file_location("train_fase2", TRAIN_SCRIPT)
+    modulo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modulo)
+    return modulo
+
+
+def test_predicciones_identicas_antes_y_despues_de_serializar(
+    datos_sinteticos: Path, tmp_path: Path
+) -> None:
+    """Guardar y recargar el artefacto no debe alterar ninguna predicción.
+
+    Se entrena en memoria, se predice con ese pipeline y se compara con lo que
+    devuelve el artefacto recargado desde disco, y con lo que escribe el CLI de
+    predicción. Así queda cubierto el recorrido completo: memoria, disco y
+    línea de comandos.
+    """
+    train = cargar_modulo_train()
+    resultado = train.train_model(
+        data_path=datos_sinteticos,
+        target="price",
+        output_dir=tmp_path / "models",
+        version="v1",
+        seed=42,
+    )
+
+    muestra = pd.read_csv(datos_sinteticos).drop(columns="price").iloc[:8]
+    en_memoria = resultado["pipeline"].predict(muestra[INPUT_COLUMNS])
+
+    recargado = joblib.load(resultado["model_path"])["pipeline"]
+    desde_disco = recargado.predict(muestra[INPUT_COLUMNS])
+
+    assert len(en_memoria) == len(muestra)
+    np.testing.assert_allclose(desde_disco, en_memoria, rtol=0, atol=1e-10)
+
+    # El mismo contraste, ahora a través de predict.py.
+    input_path = tmp_path / "entrada_serializacion.csv"
+    output_path = tmp_path / "predicciones_serializacion.csv"
+    muestra.to_csv(input_path, index=False)
+
+    proceso = predict(resultado["model_path"], input_path, output_path)
+    assert proceso.returncode == 0, proceso.stderr
+
+    desde_cli = pd.read_csv(output_path)["prediccion"].to_numpy()
+    np.testing.assert_allclose(desde_cli, en_memoria, rtol=0, atol=1e-6)
 
 
 def test_valores_faltantes_en_variables_numericas(

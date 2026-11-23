@@ -322,6 +322,9 @@ def train_model(
     print(f"[+] Artefactos guardados en: {version_dir}/")
     return {
         "version": version,
+        # El pipeline tal como quedó en memoria, antes de serializarlo. Permite
+        # comprobar que el artefacto recargado predice exactamente lo mismo.
+        "pipeline": model,
         "model_path": version_dir / "modelo.joblib",
         "metrics_path": version_dir / "metrics.json",
         "metadata_path": version_dir / "metadata.json",
