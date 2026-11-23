@@ -5,6 +5,9 @@ indicadores: el total de solicitudes y el porcentaje de fallidas, contando como
 fallida toda respuesta HTTP 4xx o 5xx. Si el registro está vacío, informa un
 total de 0 y «sin solicitudes» en lugar de un porcentaje.
 
+Admite los dos formatos que permite la especificación, CSV y JSONL, y los
+distingue por el contenido del archivo, no por su extensión.
+
 Ejemplos:
 
     python3 metricas.py
@@ -14,6 +17,7 @@ Ejemplos:
 
 import argparse
 import csv
+import json
 import sys
 from collections import Counter
 from pathlib import Path
@@ -33,18 +37,58 @@ def es_fallida(estado: str) -> bool:
     return 400 <= codigo <= 599
 
 
-def leer_registro(ruta: Path) -> list[dict[str, str]]:
-    """Devuelve las filas de datos del registro; lista vacía si no hay ninguna."""
+def _es_jsonl(texto: str) -> bool:
+    """Un registro JSONL empieza por un objeto JSON en su primera línea útil."""
+    for linea in texto.splitlines():
+        if linea.strip():
+            return linea.lstrip().startswith("{")
+    return False
+
+
+def _leer_jsonl(texto: str, ruta: Path) -> list[dict]:
+    eventos = []
+    for numero, linea in enumerate(texto.splitlines(), start=1):
+        if not linea.strip():
+            continue
+        try:
+            evento = json.loads(linea)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"La línea {numero} de {ruta} no es un objeto JSON válido: {exc}"
+            ) from exc
+        if not isinstance(evento, dict):
+            raise ValueError(
+                f"La línea {numero} de {ruta} debe ser un objeto JSON, "
+                f"no {type(evento).__name__}."
+            )
+        eventos.append({clave: valor for clave, valor in evento.items()})
+    return eventos
+
+
+def leer_registro(ruta: Path) -> list[dict]:
+    """Devuelve las filas de datos del registro; lista vacía si no hay ninguna.
+
+    Acepta CSV y JSONL. El formato se deduce del contenido, porque la API puede
+    escribir cualquiera de los dos y la extensión no siempre lo refleja.
+    """
     if not ruta.is_file():
         raise FileNotFoundError(f"No existe el registro de solicitudes: {ruta}")
 
-    with ruta.open(newline="", encoding="utf-8") as archivo:
-        filas = [fila for fila in csv.DictReader(archivo) if any(fila.values())]
+    texto = ruta.read_text(encoding="utf-8")
+
+    if _es_jsonl(texto):
+        filas = _leer_jsonl(texto, ruta)
+    else:
+        filas = [
+            fila
+            for fila in csv.DictReader(texto.splitlines())
+            if any(valor not in (None, "") for valor in fila.values())
+        ]
 
     if filas and CAMPO_ESTADO not in filas[0]:
         raise ValueError(
-            f"El registro no tiene la columna '{CAMPO_ESTADO}'. "
-            f"Columnas encontradas: {', '.join(filas[0])}"
+            f"El registro no tiene el campo '{CAMPO_ESTADO}'. "
+            f"Campos encontrados: {', '.join(str(clave) for clave in filas[0])}"
         )
     return filas
 
@@ -101,15 +145,20 @@ def main() -> int:
         print(f"Porcentaje de fallidas: {metricas['porcentaje_fallidas']:.1f} %")
 
     if args.detalle and filas:
+        # En JSONL un campo ausente llega como null; se normaliza a texto para
+        # poder contarlo y ordenarlo junto a los valores del CSV.
+        def texto(valor) -> str:
+            return "" if valor is None else str(valor)
+
         print("\nPor código HTTP:")
         for codigo, cuenta in sorted(
-            Counter(fila.get(CAMPO_ESTADO, "") for fila in filas).items()
+            Counter(texto(fila.get(CAMPO_ESTADO)) for fila in filas).items()
         ):
             print(f"  {codigo or 'sin código'}: {cuenta}")
 
         print("\nPor versión del modelo:")
         for version, cuenta in sorted(
-            Counter(fila.get(CAMPO_VERSION, "") for fila in filas).items()
+            Counter(texto(fila.get(CAMPO_VERSION)) for fila in filas).items()
         ):
             print(f"  {version or 'sin versión (solicitud rechazada)'}: {cuenta}")
 

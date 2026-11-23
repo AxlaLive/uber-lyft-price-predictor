@@ -1,5 +1,6 @@
 """Pruebas del script de métricas de operación (Fase 4)."""
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -120,4 +121,80 @@ def test_registro_inexistente_termina_con_error(tmp_path: Path) -> None:
 
     assert resultado.returncode == 1
     assert "No existe el registro" in resultado.stderr
+    assert "Total de solicitudes" not in resultado.stdout
+
+
+def escribir_jsonl(path: Path, eventos: list[dict]) -> Path:
+    path.write_text(
+        "".join(json.dumps(evento, ensure_ascii=False) + "\n" for evento in eventos),
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_registro_jsonl_se_lee_igual_que_el_csv(tmp_path: Path) -> None:
+    """La especificación admite CSV o JSONL: el reporte debe ser el mismo.
+
+    Antes, un JSONL con solicitudes se informaba como «sin solicitudes», porque
+    el lector solo entendía CSV y no avisaba del problema.
+    """
+    registro = escribir_jsonl(
+        tmp_path / "eventos.jsonl",
+        [
+            {
+                "timestamp": "2026-11-22T10:00:00",
+                "http_status": 200,
+                "model_version": "v1",
+                "prediction": 18.7,
+            },
+            {
+                "timestamp": "2026-11-22T10:01:00",
+                "http_status": 200,
+                "model_version": "v1",
+                "prediction": 19.2,
+            },
+            {
+                "timestamp": "2026-11-22T10:02:00",
+                "http_status": 422,
+                "model_version": None,
+                "prediction": None,
+            },
+        ],
+    )
+
+    metricas = calcular_metricas(leer_registro(registro))
+    assert metricas["total"] == 3
+    assert metricas["fallidas"] == 1
+    assert metricas["porcentaje_fallidas"] == pytest.approx(100 / 3)
+
+    resultado = ejecutar(registro, "--detalle")
+    assert resultado.returncode == 0, resultado.stderr
+    assert "Total de solicitudes: 3" in resultado.stdout
+    assert "Porcentaje de fallidas: 33.3 %" in resultado.stdout
+    # Un valor nulo no debe romper el desglose ni su ordenamiento.
+    assert "sin versión (solicitud rechazada): 1" in resultado.stdout
+    assert "  v1: 2" in resultado.stdout
+
+
+def test_jsonl_vacio_informa_sin_solicitudes(tmp_path: Path) -> None:
+    registro = escribir_jsonl(tmp_path / "vacio.jsonl", [])
+
+    resultado = ejecutar(registro)
+    assert resultado.returncode == 0, resultado.stderr
+    assert "Total de solicitudes: 0" in resultado.stdout
+    assert "Porcentaje de fallidas: sin solicitudes" in resultado.stdout
+
+
+def test_jsonl_con_linea_invalida_termina_con_error(tmp_path: Path) -> None:
+    """Una línea corrupta no debe reportarse como si no hubiera solicitudes."""
+    registro = tmp_path / "corrupto.jsonl"
+    registro.write_text(
+        '{"timestamp": "2026-11-22T10:00:00", "http_status": 200}\n'
+        "{esto no es json}\n",
+        encoding="utf-8",
+    )
+
+    resultado = ejecutar(registro)
+    assert resultado.returncode == 1
+    assert "línea 2" in resultado.stderr
     assert "Total de solicitudes" not in resultado.stdout
