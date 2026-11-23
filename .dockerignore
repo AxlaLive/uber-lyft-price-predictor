@@ -1,0 +1,22 @@
+.git/
+.gitignore
+.opencode/
+AGENTS.md
+docs/
+
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
+**/venv/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# Dataset real y salidas locales: se excluyen de la imagen.
+**/rideshare_kaggle.csv
+fase-2/outputs/
+**/*.csv
+
+# Excepciones que el contenedor necesita para demostrar el flujo.
+!fase-2/data/ejemplo_prediccion.csv
+!fase-4/logs/muestra_ensayo.csv

@@ -30,12 +30,9 @@ app = FastAPI(
 logger = logging.getLogger(__name__)
 VERSION_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\Z")
 DEFAULT_MODEL_DIR = Path(__file__).resolve().parents[1] / "fase-2" / "models"
-DEFAULT_PREDICT_LOG_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "fase-4"
-    / "logs"
-    / "predict_requests.csv"
-)
+DEFAULT_PREDICT_LOG_DIR = Path(__file__).resolve().parents[1] / "fase-4" / "logs"
+DEFAULT_PREDICT_LOG_NAME = "predict_requests.csv"
+DEFAULT_PREDICT_LOG_PATH = DEFAULT_PREDICT_LOG_DIR / DEFAULT_PREDICT_LOG_NAME
 PHASE2_TRAIN_PATH = Path(__file__).resolve().parents[1] / "fase-2" / "train.py"
 _training_lock = threading.Lock()
 _prediction_log_lock = threading.Lock()
@@ -199,15 +196,33 @@ def _new_training_version(output_dir: Path) -> str:
             return version
 
 
+def _prediction_log_path() -> Path:
+    """Resuelve el archivo de registro a partir de PREDICT_LOG_PATH.
+
+    La variable puede apuntar al archivo (`.../predict_requests.csv`) o al
+    directorio de logs (`fase-4/logs/`), que es el valor por defecto del
+    contenedor. En el segundo caso se usa un nombre de archivo fijo.
+    """
+    configured = os.getenv("PREDICT_LOG_PATH")
+    if not configured:
+        return DEFAULT_PREDICT_LOG_PATH
+
+    path = Path(configured).expanduser()
+    as_directory = (
+        configured.endswith(("/", os.sep))
+        or path.is_dir()
+        or path.suffix == ""
+    )
+    return path / DEFAULT_PREDICT_LOG_NAME if as_directory else path
+
+
 def _append_prediction_event(
     timestamp: str,
     http_status: int,
     model_version: str,
     prediction: Optional[float],
 ) -> None:
-    log_path = Path(
-        os.getenv("PREDICT_LOG_PATH", str(DEFAULT_PREDICT_LOG_PATH))
-    ).expanduser()
+    log_path = _prediction_log_path()
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     with _prediction_log_lock:
