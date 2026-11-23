@@ -1,0 +1,15 @@
+{
+  "distance": 0.91,
+  "surge_multiplier": 1.0,
+  "latitude": 42.3398,
+  "longitude": -71.0892,
+  "temperature": 52.9,
+  "apparentTemperature": 52.9,
+  "humidity": 0.5,
+  "windSpeed": 7.4,
+  "windGust": 7.78,
+  "visibility": 10.0,
+  "pressure": 999.89,
+  "name": "Black SUV",
+  "cab_type": "Uber"
+}
